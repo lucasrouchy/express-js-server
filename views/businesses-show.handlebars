@@ -1,0 +1,14 @@
+<a href="/">Back to Home</a>
+
+<h1>Businesses</h1>
+{{#each businesses}}
+  <h2>{{this.name}}</h2><br>
+  <small>{{this.description}}</small><br>
+  <small>{{this.picture}}</small><br>
+  <body>{{this.caption}}</body><br><br>
+{{/each}}
+
+<p><a href="/business/edit">Edit your Business</a></p>
+<p><form method="POST" action="/business/{{business._id}}?_method=DELETE">
+    <button type="submit">Delete your Buisness</button>
+</form></p>
