@@ -1,16 +1,11 @@
 const router = require('express').Router();
 const { validateAgainstSchema, extractValidFields } = require('../val/validation');
-
+const photoSchema = require('../models/photo');
 const photos = require('../db/photos');
 
 exports.router = router;
 exports.photos = photos;
 
-const photoSchema = {
-    userid: { required: true },
-    businessid: { required: true },
-    caption: { required: false }
-};
 
 router.post('/', function (req, res, next) {
     if (validateAgainstSchema(req.body, photoSchema)) {

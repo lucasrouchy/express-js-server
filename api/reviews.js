@@ -1,18 +1,11 @@
 const router = require('express').Router();
 const { validateAgainstSchema, extractValidFields } = require('../val/validation');
-
+const reviewSchema = require('../models/review');
 const reviews = require('../db/reviews');
 
 exports.router = router;
 exports.reviews = reviews;
 
-const reviewSchema = {
-    userid: { required: true },
-    businessid: { required: true },
-    dollars: { required: true },
-    stars: { required: true },
-    review: { required: false }
-};
 
 router.post('/', function (req, res, next) {
     if (validateAgainstSchema(req.body, reviewSchema)) {
