@@ -4,5 +4,5 @@ const photoSchema = new mongoose.Schema({
     businessid: { type: Number,required: true },
     caption: { type: String,required: false }
 });
-Photo = mongoose.model('photo', photoSchema);
+const Photo = mongoose.model('photo', photoSchema);
 module.exports = Photo;

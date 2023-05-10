@@ -5,7 +5,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const api = require('./api');
-const Business = require("./models/business");
+// const Business = require("./models/business");
+// const businessesRoutes = require("./api/businesses");
+// const reviewsRoutes = require("./api/reviews");
+// const usersRoutes = require("./api/users");
 const {MONGOOSE_USERNAME, MONGOOSE_PASSWORD, MONGOOSE_DB_NAME} = process.env;
 
 const port = 3000

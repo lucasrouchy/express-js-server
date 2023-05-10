@@ -45,20 +45,24 @@ router.get('/', async (req, res) => {
     res.status(500).json({message: "Error getting businesses"})
   }
 });
+router.get('/:businessID', getBusiness, (req, res) => {
+  res.json(req.business);
+});
   
  
 
-router.post('/', function (req, res, next) {
+router.post('/', async (req, res) => {
     if (validateAgainstSchema(req.body, businessSchema)) {
       const business = extractValidFields(req.body, businessSchema);
+      
       business.id = businesses.length;
-      businesses.push(business);
-      res.status(201).json({
-        id: business.id,
-        links: {
-          business: `/businesses/${business.id}`
-        }
-      });
+      try{
+        const newBusiness = await business.save();
+        businesses.push(newBusiness);
+        res.status(201).json({id: business.id, links: {business: `/businesses/${business.id}`}});
+      } catch (err) {
+        res.status(500).json({message: "Error inserting business into DB"})
+      }  
     } else {
       res.status(400).json({
         error: "Request body is not a valid business object"
@@ -85,3 +89,36 @@ router.patch('/:businessID', function (req, res, next) {
       next();
     }
 });
+
+router.put('/:businessID', getBusiness, async (req, res) => {
+  try {
+    const updatedBusiness = await res.business.set(req.body);
+    res.json(updatedBusiness);
+  } catch (err) {
+    res.status(400).json({message: err.message});
+  }
+});
+
+router.delete('/:businessID', getBusiness, async (req, res) => {
+  try {
+    await res.business.deleteOne();
+    res.json({message: "Business deleted"});
+  } catch (err) {
+    res.status(500).json({message: err.message});
+  }
+});
+
+async function getBusiness(req, res, next){
+  let business;
+  try{
+    business = await businessSchema.findById(req.params.businessID);
+    if (business == null) {
+      res.status(404).json({message: "Business not found"});
+    }
+  } catch (err) {
+      return res.status(500).json({message: err.message});
+  }
+  res.business = business;
+  next();
+
+}
