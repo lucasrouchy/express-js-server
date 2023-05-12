@@ -1,79 +1,69 @@
+const express = require('express');
+const mongoose = require('mongoose');
 const router = require('express').Router();
-const { validateAgainstSchema, extractValidFields } = require('../val/validation');
+// const { validateAgainstSchema, extractValidFields } = require('../val/validation');
 const photoSchema = require('../models/photo');
-const photos = require('../db/photos');
+// const photos = require('../db/photos');
 
 exports.router = router;
-exports.photos = photos;
+// exports.photos = photos;
 
 
-router.post('/', function (req, res, next) {
-    if (validateAgainstSchema(req.body, photoSchema)) {
-      const photo = extractValidFields(req.body, photoSchema);
-      photo.id = photos.length;
-      photos.push(photo);
-      res.status(201).json({
-        id: photo.id,
-        links: {
-          photo: `/photos/${photo.id}`,
-          business: `/businesses/${photo.businessid}`
-        }
-      });
-    } else {
-      res.status(400).json({
-        error: "Request body is not a valid photo object"
-      });
-    }
+router.post('/post', async (req, res) => {
+  const photo = new photoSchema({
+    _id: new mongoose.Types.ObjectId(),
+    id: req.body.id,
+    userid: req.body.userid,
+    businessid: req.body.businessid,
+    caption: req.body.caption
+  });
+  try{
+    const savedPhoto = photo.save();
+    res.status(200).json(savedPhoto);
+  } catch (err) {
+    res.status(400).json({ message: err });
+  }
+});
+router.get('/', async (req, res) => {
+  try{
+    const data = await photoSchema.find();
+    res.json(data)
+  }
+  catch(error){
+      res.status(500).json({message: error.message})
+  }
 });
 
-router.get('/:photoID', function (req, res, next) {
-    const photoID = parseInt(req.params.photoID);
-    if (photos[photoID]) {
-      res.status(200).json(photos[photoID]);
-    } else {
-      next();
-    }
+router.get('/:id', async (req, res) => {
+  try{
+    const business = await photoSchema.findById(req.params.id);
+    res.json(business)
+  }
+  catch(error){
+      res.status(500).json({message: error.message})
+  }
 });
-
-router.put('/:photoID', function (req, res, next) {
-    const photoID = parseInt(req.params.photoID);
-    if (photos[photoID]) {
-  
-      if (validateAgainstSchema(req.body, photoSchema)) {
-       
-        const updatedPhoto = extractValidFields(req.body, photoSchema);
-        const existingPhoto = photos[photoID];
-        if (existingPhoto && updatedPhoto.businessid === existingPhoto.businessid && updatedPhoto.userid === existingPhoto.userid) {
-          photos[photoID] = updatedPhoto;
-          photos[photoID].id = photoID;
-          res.status(200).json({
-            links: {
-              photo: `/photos/${photoID}`,
-              business: `/businesses/${updatedPhoto.businessid}`
-            }
-          });
-        } else {
-          res.status(403).json({
-            error: "Updated photo cannot modify businessid or userid"
-          });
-        }
-      } else {
-        res.status(400).json({
-          error: "Request body is not a valid photo object"
-        });
-      }
-  
-    } else {
-      next();
-    }
+router.patch('/update/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updatedData = req.body;
+    const options = { new: true };
+    const result = await photoSchema.findByIdAndUpdate(
+        id, updatedData, options
+    )
+    res.send(result)
+  }
+  catch (error) {
+      res.status(400).json({ message: error.message })
+  }
 });
-
-router.delete('/:photoID', function (req, res, next) {
-    const photoID = parseInt(req.params.photoID);
-    if (photos[photoID]) {
-      photos[photoID] = null;
-      res.status(204).end();
-    } else {
-      next();
-    }
+router.delete('/delete/:id', async(req, res) => {
+  try {
+    const id = req.params.id;
+    const data = await photoSchema.findByIdAndDelete(id)
+    res.send(`Document with ${data.businessid} has been deleted..`)
+  }
+  catch (error) {
+      res.status(400).json({ message: error.message })
+  }
 });
