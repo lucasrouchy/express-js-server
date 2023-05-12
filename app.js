@@ -16,12 +16,8 @@ const dbOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   
-  authSource: 'admin',
-  user: MONGOOSE_USERNAME,
-  pass: MONGOOSE_PASSWORD
-  
 };
-const dbURL = `mongodb://localhost:27017/${MONGOOSE_DB_NAME}`;
+const dbURL = `mongodb+srv://lucasrouchy1:guest@cluster0.cw6yjly.mongodb.net/MyResourcesDB`;
 mongoose.connect(dbURL, dbOptions).then(() => {
   console.log('Connected to MongoDB database');
 }).catch(err => {
