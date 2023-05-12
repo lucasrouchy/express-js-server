@@ -10,7 +10,6 @@ const api = require('./api');
 // const reviewsRoutes = require("./api/reviews");
 // const usersRoutes = require("./api/users");
 
-console.log(process.env.MONGODB_URL);
 const port = 3000
 const dbOptions = {
   useNewUrlParser: true,
