@@ -9,19 +9,19 @@ const api = require('./api');
 // const businessesRoutes = require("./api/businesses");
 // const reviewsRoutes = require("./api/reviews");
 // const usersRoutes = require("./api/users");
-const MONGODB_URL = process.env.MONGODBURL;
 
+console.log(process.env.MONGODB_URL);
 const port = 3000
 const dbOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true, 
-  // auth:{
-  //   user: process.env.MONGODBUSER,
-  //   password: process.env.MONGODBPASSWORD
+  // authSource:{
+  //   user: MONGODB_USER,
+  //   password: MONGODB_PASSWORD
   // }
 };
-const dbURL = 'mongodb+srv://lucasrouchy1:guest@cluster0.cw6yjly.mongodb.net/MyResourcesDB';
 
+const dbURL = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.cw6yjly.mongodb.net/${process.env.MONGODB_DB}`;
 mongoose.connect(dbURL, dbOptions).then(() => {
   console.log('Connected to MongoDB database');
 }).catch(err => {

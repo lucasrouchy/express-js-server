@@ -10,12 +10,11 @@
   },
   "author": "Lucas Rouchy<lucasrouchy1@gmail.com>",
   "dependencies": {
+    "config": "^3.3.6",
     "dotenv": "^16.0.3",
     "express": "^4.17.3",
     "mongoose": "^6.0.12",
     "morgan": "^1.10.0"
-    
-    
   },
   "devDependencies": {
     "nodemon": "^2.0.15"
