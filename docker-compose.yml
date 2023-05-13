@@ -5,7 +5,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - MONGODB_URL=mongodb+srv://lucasrouchy1:guest@cluster0.cw6yjly.mongodb.net/MyResourcesDB
+      - MONGODB_URL=mongodb+srv://${MONGODB_USER}:${MONGODB_PASS}@cluster0.cw6yjly.mongodb.net/${MONGODB_DB}
     depends_on:
       - mongo
   mongo:
@@ -14,6 +14,10 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    environment:
+      - MONGODB_USER=${MONGODB_USER}
+      - MONGODB_PASS=${MONGODB_PASS}
+      - MONGODB_DB=${MONGODB_DB}
 volumes:
   mongo-data:
   
