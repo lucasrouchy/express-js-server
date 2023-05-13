@@ -5,10 +5,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const api = require('./api');
-// const Business = require("./models/business");
-// const businessesRoutes = require("./api/businesses");
-// const reviewsRoutes = require("./api/reviews");
-// const usersRoutes = require("./api/users");
+
 
 const port = 3000
 const dbOptions = {
