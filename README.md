@@ -11,3 +11,5 @@ I also opted to use postman to test the api since I found it easier to use than 
 
 
 <img width="1410" alt="Screenshot 2023-05-13 at 12 10 49 PM" src="https://github.com/lucasrouchy/express-js-server/assets/55973521/6b0d214e-b82c-4416-bdd4-42cc4788ad76">
+
+To connect to my DB I need to a authorize your IP address. So please let me know if that is an issue and I can add your IP using MongoDB Atlas. 
