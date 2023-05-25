@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const User = require('../models/user');
+const userSchema = require('../models/user');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const jwtMiddleware = require('../jwtMiddleware');
@@ -23,36 +23,26 @@ const authenticatedLimiter = rateLimit({
 });
 
 router.post('/post', unAuthenticatedLimiter, async (req, res) => {
+  const user = new userSchema({
+    _id: new mongoose.Types.ObjectId(),
+    userid: req.body.userid,
+    username: req.body.username,
+    email: req.body.email,
+    password: req.body.password,
+    admin: req.body.admin
+  });
   try{
     const { email, password } = req.body;
-    const existingUser = await User.findOne({ email });
+    const existingUser = await userSchema.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'user already exists' });
     }
-    const newUser = await User.findOne({ email });
-    if (!newUser) {
-      return res.status(400).json({ message: 'Invalid email' });
-    }
-    const passwordMatch = await bcrypt.compare(password, newUser.password);
-    if (!passwordMatch) {
-      return res.status(400).json({ message: 'Invalid password' });
-    }
-
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const user = new User({
-      _id: new mongoose.Types.ObjectId(),
-      userid: req.body.id,
-      username: req.body.username,
-      email: req.body.email,
-      password: req.body.password,
-      admin: req.body.admin
-    });
-    const token = jwt.sign(User, JWT_SECRET, { expiresIn: JWT_EXPIRATION_TIME });
+    
+    // const token = jwt.sign(userSchema, JWT_SECRET, { expiresIn: JWT_EXPIRATION_TIME });
 
     const savedUser = user.save();
     res.status(200).json(savedUser);
-    res.status(201).json({ token });
+    // res.status(201).json({ token });
   } catch (err) {
     res.status(400).json({ message: err });
   }
@@ -63,7 +53,7 @@ router.use(authenticatedLimiter);
 router.post('/login', jwtMiddleware, async (req, res) => {
   const { email, password } = req.body;
   try{
-    const user = await User.findOne({ email });
+    const user = await userSchema.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid email' });
     }
@@ -81,7 +71,7 @@ router.post('/login', jwtMiddleware, async (req, res) => {
 
 router.get('/', jwtMiddleware, async (req, res) => {
   try{
-    const data = await User.find();
+    const data = await userSchema.find();
     res.json(data)
   }
   catch(error){
@@ -91,7 +81,7 @@ router.get('/', jwtMiddleware, async (req, res) => {
 
 router.get('/:id/businesses',jwtMiddleware, async (req, res) => {
   try{
-    const userid = await User.findById(req.params.userid);
+    const userid = await userSchema.findById(req.params.userid);
     const userBusinesses = await Business.find({ownerid: userid.userid});
     res.status(200).json({businesses: userBusinesses});
   }
@@ -102,7 +92,7 @@ router.get('/:id/businesses',jwtMiddleware, async (req, res) => {
 
 router.get('/:id/reviews', jwtMiddleware, async (req, res) => {
   try{
-    const userid = await User.findById(req.params.userid);
+    const userid = await userSchema.findById(req.params.userid);
     const userReviews = await Review.find({userid: userid.userid});
     res.status(200).json({reviews: userReviews});
   }
@@ -113,7 +103,7 @@ router.get('/:id/reviews', jwtMiddleware, async (req, res) => {
 
 router.get('/:id/photos', jwtMiddleware, async (req, res) => {
   try{
-    const userid = await User.findById(req.params.userid);
+    const userid = await userSchema.findById(req.params.userid);
     const userPhotos = await Photo.find({userid: userid.userid});
     res.status(200).json({photos: userPhotos});
   }
@@ -125,9 +115,9 @@ router.get('/:id/photos', jwtMiddleware, async (req, res) => {
 router.get('/:id', jwtMiddleware, async (req, res) => {
   try{
     const userid = req.params.userid;
-    const user = await User.findById(userid).select('-password');
+    const user = await userSchema.findById(userid).select('-password');
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'userSchema not found' });
     }
     res.json(user)
   }
