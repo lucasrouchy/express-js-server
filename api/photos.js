@@ -1,12 +1,25 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = require('express').Router();
-
+const multer = require('multer');
+const grid = require('gridfs-stream');
+const path = require('path');
+const crypto = require('crypto');
 const photoSchema = require('../models/photo');
 const jwtMiddleware = require('../jwtMiddleware');
 const rateLimit = require('express-rate-limit');
 exports.router = router;
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png'){
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type, only JPEG and PNG is allowed!'));
+    }
+  }
+})
 const unAuthenticatedLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
@@ -41,7 +54,7 @@ router.get('/:id', unAuthenticatedLimiter, async (req, res) => {
 });
 
 router.use(authenticatedLimiter);
-router.post('/post', jwtMiddleware, async (req, res) => {
+router.post('/post', jwtMiddleware, upload.single('file'), async (req, res) => {
   if (req.body.userid !== req.user.id && !req.user.admin) {
     return res.status(403).json({ message: 'Forbidden' });
   }
@@ -51,7 +64,8 @@ router.post('/post', jwtMiddleware, async (req, res) => {
     id: req.body.id,
     userid: req.body.userid,
     businessid: req.body.businessid,
-    caption: req.body.caption
+    caption: req.body.caption,
+    file: req.file.buffer
   });
   try{
     const savedPhoto = photo.save();

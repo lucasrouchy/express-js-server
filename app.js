@@ -5,6 +5,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const api = require('./api');
+const gridfs = require('gridfs-stream');
 
 
 const port = 3000
@@ -18,6 +19,16 @@ const dbOptions = {
 };
 
 const dbURL = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0.cw6yjly.mongodb.net/${process.env.MONGODB_DB}`;
+const conn = mongoose.createConnection(dbURL, dbOptions);
+let gfs;
+conn.once('open', () => {
+  gfs = gridfs(conn.db, mongoose.mongo);
+  gfs.collection('photos');
+});
+mongoose.connection.on('error', err => {
+  console.error('Error connecting to MongoDB database', err);
+});
+
 mongoose.connect(dbURL, dbOptions).then(() => {
   console.log('Connected to MongoDB database');
 }).catch(err => {
