@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 const express = require('express');
 const businessSchema = require('../models/business');
 const router = require('express').Router();
-const jwt = require('jsonwebtoken');
+const photoSchema = require('../models/photo');
+
 const jwtMiddleware = require('../jwtMiddleware');
 const rateLimit = require('express-rate-limit');
 exports.router = router;
@@ -36,6 +37,21 @@ router.get('/:id', unAuthenticatedLimiter, async (req, res) => {
   try{
     const business = await businessSchema.findById(req.params.id);
     res.json(business)
+    const businessId = req.params.id;
+    const photos = await photoSchema.find({ businessid: businessId });
+    const photoData = await Promise.all(
+      photos.map(async (photo) => {
+        const file = await gfs.files.findOne({ _id: photo.fileid });
+        if (!file) {
+          return null;
+        }
+
+        const downloadURL = `/media/photos/${photo._id}.${photo.format}`;
+        return { ...photo.toObject(), downloadURL };
+      })
+    );
+    const filteredPhotoData = photoData.filter((photo) => photo !== null);
+    res.json(filteredPhotoData);
   }
   catch(error){
       res.status(500).json({message: error.message})

@@ -2,8 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = require('express').Router();
 const multer = require('multer');
-const grid = require('gridfs-stream');
-const path = require('path');
+const gridfs = require('gridfs-stream');
 const crypto = require('crypto');
 const photoSchema = require('../models/photo');
 const jwtMiddleware = require('../jwtMiddleware');
@@ -39,14 +38,26 @@ router.get('/', unAuthenticatedLimiter, async (req, res) => {
     res.json(data)
   }
   catch(error){
-      res.status(500).json({message: error.message})
+      res.status(500).json({message: error.message});
   }
 });
 
 router.get('/:id', unAuthenticatedLimiter, async (req, res) => {
   try{
-    const business = await photoSchema.findById(req.params.id);
-    res.json(business)
+    const photoId = req.params.id;
+
+    const photo = await photoSchema.findById(photoId);
+    if (!photo) {
+      return res.status(404).json({ message: 'Photo not found' });
+    }
+
+    const file = await gfs.files.findOne({ _id: photo.fileid });
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    const downloadURL = `/media/photos/${photoId}.${photo.format}`;
+    res.json({ ...photo.toObject(), downloadURL });
   }
   catch(error){
       res.status(500).json({message: error.message})
@@ -54,6 +65,7 @@ router.get('/:id', unAuthenticatedLimiter, async (req, res) => {
 });
 
 router.use(authenticatedLimiter);
+
 router.post('/post', jwtMiddleware, upload.single('file'), async (req, res) => {
   if (req.body.userid !== req.user.id && !req.user.admin) {
     return res.status(403).json({ message: 'Forbidden' });
@@ -65,11 +77,23 @@ router.post('/post', jwtMiddleware, upload.single('file'), async (req, res) => {
     userid: req.body.userid,
     businessid: req.body.businessid,
     caption: req.body.caption,
-    file: req.file.buffer
+    format: req.file.mimetype.split('/')[1]
   });
   try{
-    const savedPhoto = photo.save();
-    res.status(200).json(savedPhoto);
+    const buffer = req.file.buffer;
+    
+    const writestream = gfs.createWriteStream({
+      filename: photo._id.toString(),
+      root: 'photos',
+      contentType: req.file.mimetype
+    });
+    writestream.write(buffer);
+    writestream.end();
+    writestream.on('finish', async () => {
+      console.log(`Photo with ID ${photo._id} stored in GridFS`);
+      const savedPhoto = await photo.save();
+      res.status(200).json(savedPhoto);
+    });
   } catch (err) {
     res.status(400).json({ message: err });
   }
@@ -85,11 +109,11 @@ router.patch('/update/:id', jwtMiddleware, async (req, res) => {
     const options = { new: true };
     const result = await photoSchema.findByIdAndUpdate(
         id, updatedData, options
-    )
-    res.send(result)
+    );
+    res.send(result);
   }
   catch (error) {
-      res.status(400).json({ message: error.message })
+      res.status(400).json({ message: error.message });
   }
 });
 router.delete('/delete/:id', jwtMiddleware, async(req, res) => {
@@ -98,8 +122,18 @@ router.delete('/delete/:id', jwtMiddleware, async(req, res) => {
   }
   try {
     const id = req.params.id;
-    const data = await photoSchema.findByIdAndDelete(id)
-    res.send(`Document with ${data.businessid} has been deleted..`)
+    const data = await photoSchema.findByIdAndDelete(id);
+    if (!data) {
+      return res.status(404).json({ message: 'Photo not found' });
+    }
+    const fileid = data.fileid;
+    gfs.remove({ _id: fileid, root: 'photos' }, (err) => {
+      if (err) {
+        res.status(400).json({ message: err.message });
+      } else {
+        res.send(`Document with ${data.businessid} has been deleted.`)
+      }
+    });
   }
   catch (error) {
       res.status(400).json({ message: error.message })

@@ -6,6 +6,8 @@ const mongoose = require('mongoose');
 const morgan = require('morgan');
 const api = require('./api');
 const gridfs = require('gridfs-stream');
+// const amqp = require('amqplib/callback_api');
+const sharp = require('sharp');
 
 
 const port = 3000
@@ -34,6 +36,8 @@ mongoose.connect(dbURL, dbOptions).then(() => {
 }).catch(err => {
   console.error('Error connecting to MongoDB database', err);
 });
+
+
 
 const app = express()
 app.use(morgan('dev'));
