@@ -4,11 +4,14 @@ const router = require('express').Router();
 const multer = require('multer');
 const gridfs = require('gridfs-stream');
 const crypto = require('crypto');
+const amqp = require('amqplib');
 const photoSchema = require('../models/photo');
 const jwtMiddleware = require('../jwtMiddleware');
 const rateLimit = require('express-rate-limit');
 exports.router = router;
 
+const rabbitmqURL = 'amqp://localhost';
+const thumbnailQueue = 'thumbnailQueue';
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
@@ -31,6 +34,20 @@ const authenticatedLimiter = rateLimit({
   keyGenerator: (req) => req.user.id,
   message: 'Too many requests, please try again later.'
 });
+
+async function connectToRabbitMQ() {
+  try {
+    const connection = await amqp.connect(rabbitmqURL);
+    const channel = await connection.createChannel();
+
+    await channel.assertQueue(thumbnailQueue, { durable: true });
+    console.log('Connected to RabbitMQ');
+    return channel;
+  } catch (error) {
+    console.error('Error connecting to RabbitMQ', error);
+  }
+}
+const rabbitMQchannel = connectToRabbitMQ();
 
 router.get('/', unAuthenticatedLimiter, async (req, res) => {
   try{
@@ -92,6 +109,9 @@ router.post('/post', jwtMiddleware, upload.single('file'), async (req, res) => {
     writestream.on('finish', async () => {
       console.log(`Photo with ID ${photo._id} stored in GridFS`);
       const savedPhoto = await photo.save();
+      const channel = await rabbitMQchannel;
+      const message = JSON.stringify({ photoID: savedPhoto._id });
+      channel.sendToQueue(thumbnailQueue, Buffer.from(message));
       res.status(200).json(savedPhoto);
     });
   } catch (err) {
