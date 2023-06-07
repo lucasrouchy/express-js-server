@@ -12,6 +12,7 @@ exports.router = router;
 
 const rabbitmqURL = 'amqp://localhost';
 const thumbnailQueue = 'thumbnailQueue';
+
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
