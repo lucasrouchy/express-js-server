@@ -6,9 +6,6 @@ const mongoose = require('mongoose');
 const morgan = require('morgan');
 const api = require('./api');
 const gridfs = require('gridfs-stream');
-// const amqp = require('amqplib/callback_api');
-const sharp = require('sharp');
-
 
 const port = 3000
 const dbOptions = {

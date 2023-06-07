@@ -23,6 +23,8 @@ const authenticatedLimiter = rateLimit({
 });
 
 router.post('/post', unAuthenticatedLimiter, async (req, res) => {
+  // const salt = await bcrypt.genSalt(10);
+  // const hashedPassword = await bcrypt.hash(req.body.password, salt);
   const user = new userSchema({
     _id: new mongoose.Types.ObjectId(),
     userid: req.body.userid,
@@ -40,7 +42,7 @@ router.post('/post', unAuthenticatedLimiter, async (req, res) => {
     
     // const token = jwt.sign(userSchema, JWT_SECRET, { expiresIn: JWT_EXPIRATION_TIME });
 
-    const savedUser = user.save();
+    const savedUser = await user.save();
     res.status(200).json(savedUser);
     // res.status(201).json({ token });
   } catch (err) {
