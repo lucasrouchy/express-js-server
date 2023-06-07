@@ -48,7 +48,7 @@ async function connectToRabbitMQ() {
     console.error('Error connecting to RabbitMQ', error);
   }
 }
-const rabbitMQchannel = connectToRabbitMQ();
+const rabbitMQchannel = await connectToRabbitMQ();
 
 router.get('/', unAuthenticatedLimiter, async (req, res) => {
   try{
