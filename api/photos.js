@@ -8,6 +8,7 @@ const amqp = require('amqplib');
 const photoSchema = require('../models/photo');
 const jwtMiddleware = require('../jwtMiddleware');
 const rateLimit = require('express-rate-limit');
+const sharp = require('sharp');
 exports.router = router;
 
 const rabbitmqURL = 'amqp://localhost';
@@ -48,7 +49,52 @@ async function connectToRabbitMQ() {
     console.error('Error connecting to RabbitMQ', error);
   }
 }
-const rabbitMQchannel = await connectToRabbitMQ();
+const rabbitMQchannel = connectToRabbitMQ();
+
+async function processThumbnailMessage(message) {
+  const { photoID } = JSON.parse(message.content.toString());
+  const photo = await photoSchema.findById(photoID);
+  if (!photo) {
+    console.error(`Photo with ID ${photoID} not found`);
+    return;
+  }
+
+  const file = await gfs.files.findOne({ _id: photo.fileid });
+  if (!file) {
+    console.error(`File with ID ${photo.fileid} not found`);
+    return;
+  }
+
+  const originalImageStream = gfs.createReadStream({ _id: photo.fileid });
+  const thumbnailBuffer = await sharp(originalImageStream)
+    .resize(100, 100)
+    .jpeg()
+    .toBuffer();
+
+  const thumbnailWritestream = gfs.createWriteStream({
+    filename: `thumb_${photo._id.toString()}`,
+    root: 'thumbs',
+    contentType: 'image/jpeg'
+  });
+  thumbnailWritestream.write(thumbnailBuffer);
+  thumbnailWritestream.end();
+  thumbnailWritestream.on('finish', async () => {
+    const thumbnailPhoto = new photoSchema({
+      _id: new mongoose.Types.ObjectId(),
+      format: 'jpg',
+      thumbId: thumbnailWritestream.id // Store the thumbnail ID in the original photo's metadata
+    });
+    const savedThumbnail = await thumbnailPhoto.save();
+    console.log(`Thumbnail with ID ${savedThumbnail._id} generated and stored in GridFS`);
+  });
+}
+async function startThumbnailConsumer() {
+  const channel = await connectToRabbitMQ();
+  channel.consume(thumbnailQueue, processThumbnailMessage);
+}
+
+startThumbnailConsumer().catch(console.error);
+
 
 router.get('/', unAuthenticatedLimiter, async (req, res) => {
   try{
